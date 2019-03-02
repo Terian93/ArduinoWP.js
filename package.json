@@ -1,0 +1,28 @@
+{
+  "name": "awp",
+  "version": "1.0.0",
+  "description": "Arduino Web Port - library for fast and easy conection arduino-server-client  ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "check": "gts check",
+    "clean": "gts clean",
+    "compile": "tsc -p .",
+    "fix": "gts fix",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "posttest": "npm run check"
+  },
+  "author": "Vitaliy Vanchak",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/serialport": "^7.0.1",
+    "gts": "^0.9.0",
+    "tslint": "^5.13.1",
+    "typescript": "^3.3.3333"
+  },
+  "dependencies": {
+    "mypluralize": "^1.0.3",
+    "serialport": "^7.1.4"
+  }
+}
