@@ -3,7 +3,7 @@ import * as SerialPort from 'serialport';
 export class ArduinoWebPort {
   port: SerialPort;
   parser: SerialPort.parsers.Readline;
-  portOpened = false;
+  portOpened = true;
 
   constructor(path: string, options?:SerialPort.OpenOptions) {
     this.port = new SerialPort(path, options);
