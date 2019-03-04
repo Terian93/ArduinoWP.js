@@ -2,11 +2,10 @@ import * as SerialPort from 'serialport';
 import * as socketIO from 'socket.io';
 import { Server } from 'https';
 
-
-export class ArduinoWebPort {
+class ArduinoWebPort {
   socket: SocketIO.Server;
 
-  constructor (server: Server) {
+  constructor (server: Server)  {
     this.socket = socketIO(server);
   }
 
@@ -32,7 +31,23 @@ class Board {
       console.log('AWP: serial port '+ path +' opened');
     });
   }
+
+  destructor() {
+    this.port.close();
+  }
+
+  isOpened(text:string) {
+    this.port.on('open', () => {
+      console.log('AWP:' + text + ' serial port opened');
+    });
+  }
 }
+// initialize: (server:Server) => {
+//   return new ArduinoWebPort(server);
+// }
+
+export const initialize = (server: Server) => new ArduinoWebPort(server);
+
 
 // export class ArduinoWebPort {
 //   private port: SerialPort;
