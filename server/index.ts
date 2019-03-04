@@ -16,8 +16,10 @@ class ArduinoWebPort {
 
 class Board {
   private socket: SocketIO.Server;
+  private serialPortPath: string;
   private port: SerialPort;
   private parser: SerialPort.parsers.Readline;
+  private logger = (msg:Error | string) => msg != null ? console.log('logger:' + msg) : null;
 
   constructor (
     socket: SocketIO.Server, 
@@ -25,7 +27,8 @@ class Board {
     portOptions: SerialPort.OpenOptions
   ) {
     this.socket = socket;
-    this.port = new SerialPort(path, portOptions);
+    this.serialPortPath = path;
+    this.port = new SerialPort(path, portOptions, (err) => this.logger(err));
     this.parser = this.port.pipe(new SerialPort.parsers.Readline({ delimiter: '\n' }));
     this.port.on('open', () => {
       console.log('AWP: serial port '+ path +' opened');
@@ -36,15 +39,18 @@ class Board {
     this.port.close();
   }
 
-  isOpened(text:string) {
-    this.port.on('open', () => {
-      console.log('AWP:' + text + ' serial port opened');
-    });
+  isPortOpened() {
+    return this.port.isOpen;
+  }
+
+  whenPortOpened(callback: () => void) {
+    this.port.on('open', callback);
+  }
+
+  setLogger(logger: (msg: Error | string) => void) {
+    this.logger = logger;
   }
 }
-// initialize: (server:Server) => {
-//   return new ArduinoWebPort(server);
-// }
 
 export const initialize = (server: Server) => new ArduinoWebPort(server);
 
