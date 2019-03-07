@@ -16,5 +16,4 @@ const server = app.listen(3000, function(){
 });
 const core = awp.initialize(server);
 const board = core.newBoard('COM3', {baudRate: 9600});
-board.addSocketInput('test');
-board.addSocketOutput('test');
+board.addSocketInput('test').deploy().remove();
