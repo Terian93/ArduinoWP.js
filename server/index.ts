@@ -97,44 +97,6 @@ class Board {
   addSocketInput(inputName: string) {
     return new Input(inputName, this);
   }
-
-  //TODO: 
-  // private parseInput(
-  //   data: any, 
-  //   direction: 'input' | 'output' | 'both',
-  //   callback: (data: any, event: string) => void
-  // ) {
-  //   switch (direction) {
-  //     case 'input':
-        
-  //       break;
-
-  //     case 'output':
-        
-  //       break;
-
-  //     default:
-  //       break;
-  //   }
-  // }
-
-  // dataBaseLogger(
-  //   direction: 'input' | 'output' | 'both',
-  //   event: 'all' | string,
-  //   callback: (data: any, event: string) => void,
-  // ) {
-  //   if (event === 'all') {
-  //     this.socketIO.on('*', (event: string, data:any) => {
-  //       callback(data, event);
-  //     });
-  //   } else {
-  //     this.socketIO.on(event, (data: any) => {
-  //       callback(data, event);
-  //     });
-  //   }
-    
-  // }
-
 }
 
 class Input {
@@ -165,23 +127,23 @@ class Input {
   }
 
   addMiddleware(middleware: (data: any) => any) {
-    // if (this.isDeployed) {
-    //   this.board.logger('warning: middleware was changed when input event was not removed (remove() was auto called)');
-    //   this.remove();
-    // }
     this.middleware = middleware;
     return this;
   }
 
   addCallback(callback: (data: any) => void) {
-    // if (this.isDeployed) {
-    //   this.board.logger('warning: callback was changed when input event was not removed (remove() was auto called)');
-    //   this.remove();
-    // }
     this.callback = callback;
     return this;
   }
-  // Not working
+
+  changeMiddleware(middleware: (data: any) => any) {
+    return this.addMiddleware(middleware);
+  }
+
+  changeCallback(callback: (data: any) => void) {
+    return this.addCallback(callback);
+  }
+
   remove() {
     if (this.isDeployed && this.connection !== undefined) {
       this.connection.removeAllListeners();
