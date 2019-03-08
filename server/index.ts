@@ -12,20 +12,16 @@ class ArduinoWebPort {
     this.boards = {};
   }
 
-  set logger ( func: (msg:Error | null | undefined | string, type?: string) => void ) {
-    this._logger = (data) => { 
-      func(data);
-      console.log('core_logger');
-    };
-    console.log('core.logger()'); 
+  test() {
+    this.logger('anyText');
   }
 
   get logger () {
     return this._logger;
   }
 
-  test() {
-    this.logger('anyText');
+  set logger ( func: (msg:Error | null | undefined | string, type?: string) => void ) {
+    this._logger = func;
   }
 
   setLogger( func: (msg:Error | null | undefined | string, type?: string) => void ) {
@@ -88,10 +84,6 @@ class Board {
     this.serialPort.on('open', callback);
   }
 
-  set logger( func: (msg:Error | null | undefined | string, type?: string) => void ) {
-    this._logger = func;
-  }
-
   //#region Getters
 
   get logger() {
@@ -119,13 +111,15 @@ class Board {
   }
   //#endregion
 
-  //TODO: add [...functions].forEach(data => function(data))
-  // to minimize event usage; (optional)
-
-  addLocalLogger( func: (msg:Error | null | undefined | string, type?: string) => void ) {
+  set logger( func: (msg:Error | null | undefined | string, type?: string) => void ) {
     this._logger = func;
   }
 
+  setLogger( func: (msg:Error | null | undefined | string, type?: string) => void ) {
+    this._logger = func;
+  }
+
+  //TODO: refactor that to class
   addSocketOutput(outputName: string, middleware = (data:any) => data) {
     const test = this.serialParser.on('data', rawData => {
       const [dataIdentifier, data] = rawData.split('/AWP-output/');
@@ -204,7 +198,7 @@ class Input {
     return this.addCallback(callback);
   }
 
-  remove() {
+  stop() {
     if (this.isDeployed && this.connection !== undefined) {
       this.connection.removeAllListeners();
       this.isDeployed = false;
