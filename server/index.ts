@@ -145,6 +145,7 @@ class Input {
   private callback?: (data: any) => void;
   private fullListener: (data: any) => void;
   private isDeployed = false;
+  private connection?: SocketIO.Namespace;
 
   constructor(inputName: string, board: Board) {
     this.board = board;
@@ -164,47 +165,51 @@ class Input {
   }
 
   addMiddleware(middleware: (data: any) => any) {
-    if (this.isDeployed) {
-      this.board.logger('warning: middleware was changed when input event was not removed (remove() was auto called)');
-      this.remove();
-    }
+    // if (this.isDeployed) {
+    //   this.board.logger('warning: middleware was changed when input event was not removed (remove() was auto called)');
+    //   this.remove();
+    // }
     this.middleware = middleware;
     return this;
   }
 
   addCallback(callback: (data: any) => void) {
-    if (this.isDeployed) {
-      this.board.logger('warning: callback was changed when input event was not removed (remove() was auto called)');
-      this.remove();
-    }
+    // if (this.isDeployed) {
+    //   this.board.logger('warning: callback was changed when input event was not removed (remove() was auto called)');
+    //   this.remove();
+    // }
     this.callback = callback;
     return this;
   }
-
+  // Not working
   remove() {
-    this.board.socketIO.sockets.removeListener(this.inputName, this.fullListener);
-    this.isDeployed = false;
+    if (this.isDeployed && this.connection !== undefined) {
+      this.connection.removeAllListeners();
+      this.isDeployed = false;
+      this.board.logger('input ' + this.inputName + ' on board ' + this.board.serialPortPath + ' was removed');
+    }
     return this;
   }
 
   deploy() {
     if (this.isDeployed) {
-      this.board.logger('warning: deploy was called when input event was not removed (remove() was auto called)');
-      this.remove();
+      this.board.logger('warning: deploy was called when it\'s already deployed (execution stoped)');
+    } else {
+      this.isDeployed = true;
+      if (this.middleware !== undefined || this.callback !== undefined) {
+        this.fullListener = (data: any) => {
+          const parsedData = this.middleware(data);
+          this.listener(parsedData);
+          if (this.callback !== undefined) {
+            this.callback(parsedData);
+          }
+        };
+      }
+      this.connection = this.board.socketIO.on('connection', socket => {
+        socket.on(this.inputName, this.fullListener);
+      });
+      this.board.logger('input ' + this.inputName + ' on board ' + this.board.serialPortPath + ' was deployed');
     }
-    this.isDeployed = true;
-    if (this.middleware !== undefined || this.callback !== undefined) {
-      this.fullListener = (data: any) => {
-        const parsedData = this.middleware(data);
-        this.listener(parsedData);
-        if (this.callback !== undefined) {
-          this.callback(parsedData);
-        }
-      };
-    }
-    this.board.socketIO.on('connection', socket => {
-      socket.on(this.inputName, this.fullListener);
-    });
     return this;
   }
 }
