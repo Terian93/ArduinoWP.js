@@ -1,3 +1,10 @@
+import * as io from 'socket.io-client';
+const socket = io('');
+socket.on('test', (data: any) => console.log(data));
+const listener = (data: any) => console.log(data);
+socket.on('test', listener);
+socket.removeListener('test', listener);
+
 class Test {
   protected color: string;
 
