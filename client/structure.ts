@@ -66,32 +66,46 @@ const input = new Input('name') //this.listener this.fullListener=this.listener
 .method()
 .deploy() // socket.on('test', this.listener);
 
-
-
-//1 variant
-this.listener = ...
-setMiddleware(middleware: function)  
-  this.listener = (data) => { //newListener
-    const parsedData = middleware(data)
-    this.listener(parsedData); //oldListener
+//addMiddleware and addCallback
+class Test {
+	constructor() {
+   this.listener = (data) => {
+   	console.log('default ' + data)
+   }
+   this.middleware = (data) => data;
+   this.callbacks = []
   }
-
-setCallback(callback: function)  
-  this.listener = (data) => { //newListener
-    this.listener(data); //oldListener
-    callback(data);
+  addMid(func) { //new middleware
+  	const func2 = this.middleware
+  	this.middleware = (data) => {
+    	const parsed = func2(data);
+      console.log(parsed);
+      return func(parsed);
+    }
+    return this;
   }
+  addclb(func) {
+  	this.callbacks.push(func)
+    return this;
+  }
+  deploy(data) {
+  	const parsed = this.middleware(data);
+    this.callbacks.forEach((callback) => callback(parsed))
+  }
+}
 
-//2 variant (treba podumaty)
-functions []
-setMiddleware(middleware: function)  [...] => [mid, ...] 
-  functions.unshift(middleware);
-setCallback(callback: function)   [...] => [ ..., call]
-  functions.push(callback);
+const foo = new Test
+const test = (data)=>data*2;
+const test2 = (data)=>console.log('callback:'+data);
+foo
+.addclb(test2) 
+.addMid(test)
+.addclb(test2)
+.addMid(test)
+.addclb(test2)
+.deploy(2);
 
-function.forEach(element => {
-  element()
-});
+//input call queue
 Input
 .setCallback(1)       data => call1()
 .setMiddleware(1)     data => mid1() -> parsedData2 => call1()
@@ -107,3 +121,4 @@ this.fullListener = (data) => {
 }
 
 socket.on('test', this.fullListener);
+
