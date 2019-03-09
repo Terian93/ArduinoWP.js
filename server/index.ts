@@ -225,6 +225,7 @@ class Input extends Node {
   private inputName: string;
   private isDeployed = false;
   private connection?: SocketIO.Namespace;
+  private socketListener: (socket: socketIO.Socket) => void;
 
   constructor(inputName: string, board: Board) {
     super(board);
@@ -239,11 +240,14 @@ class Input extends Node {
       );
     };
     this.fullListener = this.listener;
+    this.socketListener = (socket: socketIO.Socket) => {
+      socket.on(this.inputName, this.fullListener);
+    };
   }
 
   remove() {
     if (this.isDeployed && this.connection !== undefined) {
-      this.connection.removeAllListeners();
+      this.connection.removeListener('connection', this.socketListener);
       this.isDeployed = false;
       this.logger('input ' + this.inputName + ' on board ' + this.board.serialPortPath + ' was removed');
     }
@@ -255,9 +259,10 @@ class Input extends Node {
       this.logger('warning: deploy was called when it\'s already deployed (execution stoped)');
     } else {
       this.isDeployed = true;
-      this.connection = this.board.socketIO.on('connection', socket => {
+      this.socketListener = (socket: socketIO.Socket) => {
         socket.on(this.inputName, this.fullListener);
-      });
+      };
+      this.connection = this.board.socketIO.on('connection', this.socketListener);
       this.logger('input ' + this.inputName + ' on board ' + this.board.serialPortPath + ' was deployed');
     }
     return this;
@@ -276,6 +281,7 @@ class Output extends Node {
   private outputName: string;
   private isDeployed = false;
   private connection?: SerialPort.parsers.Readline;
+  private serialPortListener: (data: any) => void;
 
   constructor(outputName: string, board: Board) {
     super(board);
@@ -288,11 +294,17 @@ class Output extends Node {
       );
     };
     this.fullListener = this.listener;
+    this.serialPortListener = (rawData: string) => {
+      const [dataIdentifier, data] = rawData.split('/AWP-output/');
+      if ( dataIdentifier === this.outputName) {
+        this.fullListener(data);
+      }
+    };
   }
 
   remove() {
     if (this.isDeployed && this.connection !== undefined) {
-      this.connection.removeAllListeners();
+      this.connection.removeListener('data', this.serialPortListener);
       this.isDeployed = false;
       this.logger('output ' + this.outputName + ' on board ' + this.board.serialPortPath + ' was removed');
     }
@@ -304,12 +316,13 @@ class Output extends Node {
       this.logger('warning: deploy was called when it\'s already deployed (execution stoped)');
     } else {
       this.isDeployed = true;
-      this.connection = this.board.serialParser.on('data', rawData => {
+      this.serialPortListener = (rawData: string) => {
         const [dataIdentifier, data] = rawData.split('/AWP-output/');
         if ( dataIdentifier === this.outputName) {
           this.fullListener(data);
         }
-      });
+      };
+      this.connection = this.board.serialParser.on('data', this.serialPortListener);
       this.logger('output ' + this.outputName + ' on board ' + this.board.serialPortPath + ' was deployed');
     }
     return this;
