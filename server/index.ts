@@ -152,7 +152,7 @@ class Board {
   }
 }
 
-class Node {
+class IO {
   protected board: Board;
   protected middleware = (data: any) => data;
   protected listener: (data: any) => void;
@@ -221,7 +221,7 @@ class Node {
   }
 }
 
-class Input extends Node {
+class Input extends IO {
   private inputName: string;
   private isDeployed = false;
   private connection?: SocketIO.Namespace;
@@ -277,10 +277,10 @@ class Input extends Node {
   }
 }
 
-class Output extends Node {
+class Output extends IO {
   private outputName: string;
   private isDeployed = false;
-  private connection?: SerialPort.parsers.Readline;
+  private connection: SerialPort.parsers.Readline;
   private serialPortListener: (data: any) => void;
 
   constructor(outputName: string, board: Board) {
@@ -300,6 +300,7 @@ class Output extends Node {
         this.fullListener(data);
       }
     };
+    this.connection = this.board.serialParser;
   }
 
   remove() {
@@ -335,7 +336,6 @@ class Output extends Node {
   removeListener() {
     return this.remove();
   }
-
 }
 
 export const initialize = (server: Server) => new ArduinoWebPort(server);
