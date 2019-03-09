@@ -56,7 +56,7 @@ class Board {
     strict: boolean
   ) {
     this.core = core;
-    this. _logger = (data) => this.core.logger(data);
+    this. _logger = (msg:Error | null | undefined | string, type?: string ) => this.core.logger(msg, type);
     this._socketIO = socket;
     this._serialPortPath = path;
     this._port = new SerialPort(path, portOptions, (data) => this.logger(data));
@@ -167,10 +167,11 @@ class Input {
   constructor(inputName: string, board: Board) {
     this.board = board;
     this.inputName = inputName;
-    this. _logger = (data) => this.board.logger(data);
+    //this. _logger = (msg:Error | null | undefined | string, type?: string ) => this.board.logger(msg, type);
+    this._logger = data => console.log(data);
     this.listener = (data:any) => {
       const editedData = inputName + '/AWP-input/' + data;
-      this.board.serialParser.write( '' + '\n', this.logger);
+      this.board.serialParser.write( editedData + '\n', this.logger);
       this.logger(
         this.board.serialPortPath + 
         ' <-[' + inputName + ']- ' +
@@ -178,6 +179,10 @@ class Input {
       );
     };
     this.fullListener = this.listener;
+  }
+
+  test(data: any) {
+    this.logger(data);
   }
 
   get logger() {
@@ -190,6 +195,7 @@ class Input {
 
   setLogger( func: (msg:Error | null | undefined | string, type?: string) => void ) {
     this._logger = func;
+    return this;
   }
 
   addMiddleware(middleware: (data: any) => any) {
@@ -232,14 +238,14 @@ class Input {
     if (this.isDeployed && this.connection !== undefined) {
       this.connection.removeAllListeners();
       this.isDeployed = false;
-      this.board.logger('input ' + this.inputName + ' on board ' + this.board.serialPortPath + ' was removed');
+      this.logger('input ' + this.inputName + ' on board ' + this.board.serialPortPath + ' was removed');
     }
     return this;
   }
 
   deploy() {
     if (this.isDeployed) {
-      this.board.logger('warning: deploy was called when it\'s already deployed (execution stoped)');
+      this.logger('warning: deploy was called when it\'s already deployed (execution stoped)');
     } else {
       this.isDeployed = true;
       if (this.middleware !== undefined || this.callback !== undefined) {
@@ -254,17 +260,17 @@ class Input {
       this.connection = this.board.socketIO.on('connection', socket => {
         socket.on(this.inputName, this.fullListener);
       });
-      this.board.logger('input ' + this.inputName + ' on board ' + this.board.serialPortPath + ' was deployed');
+      this.logger('input ' + this.inputName + ' on board ' + this.board.serialPortPath + ' was deployed');
     }
     return this;
   }
 
   deployListener() {
-    this.deploy();
+    return this.deploy();
   }
 
   removeListener() {
-    this.remove();
+    return this.remove();
   }
 }
 
