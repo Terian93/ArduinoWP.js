@@ -68,6 +68,8 @@ const input = new Input('name') //this.listener this.fullListener=this.listener
 
 //addMiddleware and addCallback
 class Test {
+  private trigger = () => true;
+
 	constructor() {
    this.listener = (data) => {
    	console.log('default ' + data)
@@ -75,6 +77,9 @@ class Test {
    this.middleware = (data) => data;
    this.callbacks = []
   }
+
+  setTrigger(){...}
+
   addMid(func) { //new middleware
   	const func2 = this.middleware
   	this.middleware = (data) => {
@@ -89,8 +94,10 @@ class Test {
     return this;
   }
   deploy(data) {
-  	const parsed = this.middleware(data);
-    this.callbacks.forEach((callback) => callback(parsed))
+    const parsed = this.middleware(data);
+    if (this.trigger(parsed)) {
+      this.callbacks.forEach((callback) => callback(parsed))
+    }
   }
 }
 
