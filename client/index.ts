@@ -4,6 +4,7 @@ socket.on('test', (data: any) => console.log(data));
 const listener = (data: any) => console.log(data);
 socket.on('test', listener);
 socket.removeListener('test', listener);
+socket.emit('test', data);
 
 class Test {
   protected color: string;
