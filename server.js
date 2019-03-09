@@ -16,7 +16,7 @@ const server = app.listen(3000, function(){
 });
 const core = awp.initialize(server);
 const board = core.newBoard('COM3', {baudRate: 9600}, false);
-const output = board.addSocketOutput('test').setLogger(( msg, type = 'AWP' ) => msg != null ? console.log('first:' + msg) : null).deploy().remove();
-const output2 = board.addSocketOutput('test').setLogger(( msg, type = 'AWP' ) => msg != null ? console.log('second:' + msg) : null).deploy();
+const output = board.addSocketOutput('test').deploy();
+const input = board.addSocketInput('test').deploy();
 
 

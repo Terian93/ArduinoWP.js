@@ -153,33 +153,17 @@ class Board {
 }
 
 class Node {
+  protected board: Board;
+  protected middleware = (data: any) => data;
+  protected listener: (data: any) => void;
+  protected callback?: (data: any) => void;
+  protected fullListener: (data: any) => void;
+  protected _logger: ( msg:Error | null | undefined | string, type?: string ) => void;
 
-}
-
-class Input {
-  private board: Board;
-  private inputName: string;
-  private middleware = (data: any) => data;
-  private listener: (data: any) => void;
-  private callback?: (data: any) => void;
-  private fullListener: (data: any) => void;
-  private isDeployed = false;
-  private connection?: SocketIO.Namespace;
-  private _logger: ( msg:Error | null | undefined | string, type?: string ) => void;
-
-  constructor(inputName: string, board: Board) {
+  constructor(board: Board) {
     this.board = board;
-    this.inputName = inputName;
     this. _logger = (msg:Error | null | undefined | string, type?: string ) => this.board.logger(msg, type);
-    this.listener = (data:any) => {
-      const editedData = inputName + '/AWP-input/' + data;
-      this.board.serialParser.write( editedData + '\n', this.logger);
-      this.logger(
-        this.board.serialPortPath + 
-        ' <-[' + inputName + ']- ' +
-        editedData
-      );
-    };
+    this.listener = (data:any) => {};
     this.fullListener = this.listener;
   }
 
@@ -234,6 +218,27 @@ class Input {
 
   getListener() {
     return this.fullListener;
+  }
+}
+
+class Input extends Node {
+  private inputName: string;
+  private isDeployed = false;
+  private connection?: SocketIO.Namespace;
+
+  constructor(inputName: string, board: Board) {
+    super(board);
+    this.inputName = inputName;
+    this.listener = (data:any) => {
+      const editedData = inputName + '/AWP-input/' + data;
+      this.board.serialParser.write( editedData + '\n', this.logger);
+      this.logger(
+        this.board.serialPortPath + 
+        ' <-[' + inputName + ']- ' +
+        data
+      );
+    };
+    this.fullListener = this.listener;
   }
 
   remove() {
@@ -267,24 +272,17 @@ class Input {
   }
 }
 
-class Output {
-  private board: Board;
+class Output extends Node {
   private outputName: string;
-  private middleware = (data: any) => data;
-  private listener: (data: any) => void;
-  private callback?: (data: any) => void;
-  private fullListener: (data: any) => void;
   private isDeployed = false;
   private connection?: SerialPort.parsers.Readline;
-  private _logger: ( msg:Error | null | undefined | string, type?: string ) => void;
 
   constructor(outputName: string, board: Board) {
-    this.board = board;
+    super(board);
     this.outputName = outputName;
     this. _logger = (msg:Error | null | undefined | string, type?: string ) => this.board.logger(msg, type);
     this.listener = (data:any) => {
-      const editedData = outputName + '/AWP-output/' + data;
-      this.board.socketIO.emit(outputName, editedData);
+      this.board.socketIO.emit(outputName, data);
       this.logger(
         this.board.serialPortPath + ' -[' + outputName + ']-> ' + data
       );
@@ -292,64 +290,11 @@ class Output {
     this.fullListener = this.listener;
   }
 
-  test(data: any) {
-    this.logger(data);
-  }
-
-  get logger() {
-    return this._logger;
-  }
-
-  set logger( func: (msg:Error | null | undefined | string, type?: string) => void ) {
-    this._logger = func;
-  }
-
-  setLogger( func: (msg:Error | null | undefined | string, type?: string) => void ) {
-    this._logger = func;
-    return this;
-  }
-
-  addMiddleware(middleware: (data: any) => any) {
-    this.middleware = middleware;
-    this.fullListener = (data: any) => {
-      const parsedData = this.middleware(data);
-      this.listener(parsedData);
-      if (this.callback !== undefined) {
-        this.callback(parsedData);
-      }
-    };
-    return this;
-  }
-
-  addCallback(callback: (data: any) => void) {
-    this.callback = callback;
-    this.fullListener = (data: any) => {
-      const parsedData = this.middleware(data);
-      this.listener(parsedData);
-      if (this.callback !== undefined) {
-        this.callback(parsedData);
-      }
-    };
-    return this;
-  }
-
-  changeMiddleware(middleware: (data: any) => any) {
-    return this.addMiddleware(middleware);
-  }
-
-  changeCallback(callback: (data: any) => void) {
-    return this.addCallback(callback);
-  }
-
-  getListener() {
-    return this.fullListener;
-  }
-
   remove() {
     if (this.isDeployed && this.connection !== undefined) {
       this.connection.removeAllListeners();
       this.isDeployed = false;
-      this.logger('input ' + this.outputName + ' on board ' + this.board.serialPortPath + ' was removed');
+      this.logger('output ' + this.outputName + ' on board ' + this.board.serialPortPath + ' was removed');
     }
     return this;
   }
@@ -365,7 +310,7 @@ class Output {
           this.fullListener(data);
         }
       });
-      this.logger('input ' + this.outputName + ' on board ' + this.board.serialPortPath + ' was deployed');
+      this.logger('output ' + this.outputName + ' on board ' + this.board.serialPortPath + ' was deployed');
     }
     return this;
   }
