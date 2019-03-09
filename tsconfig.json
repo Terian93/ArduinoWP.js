@@ -5,8 +5,10 @@
     "outDir": "build"
   },
   "include": [
-    "lib/*.ts",
-    "lib/**/*.ts",
+    "client/*.ts",
+    "client/**/*.ts",
+    "server/*.ts",
+    "server/**/*.ts",
     "test/*.ts",
     "test/**/*.ts"
   ],
