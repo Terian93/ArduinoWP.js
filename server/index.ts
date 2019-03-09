@@ -175,18 +175,31 @@ class Input {
         ' <-[' + inputName + ']- ' +
         editedData
       );
-      return true;
     };
     this.fullListener = this.listener;
   }
 
   addMiddleware(middleware: (data: any) => any) {
     this.middleware = middleware;
+    this.fullListener = (data: any) => {
+      const parsedData = this.middleware(data);
+      this.listener(parsedData);
+      if (this.callback !== undefined) {
+        this.callback(parsedData);
+      }
+    };
     return this;
   }
 
   addCallback(callback: (data: any) => void) {
     this.callback = callback;
+    this.fullListener = (data: any) => {
+      const parsedData = this.middleware(data);
+      this.listener(parsedData);
+      if (this.callback !== undefined) {
+        this.callback(parsedData);
+      }
+    };
     return this;
   }
 
@@ -198,7 +211,11 @@ class Input {
     return this.addCallback(callback);
   }
 
-  stop() {
+  getListener() {
+    return this.fullListener;
+  }
+
+  remove() {
     if (this.isDeployed && this.connection !== undefined) {
       this.connection.removeAllListeners();
       this.isDeployed = false;
@@ -227,6 +244,14 @@ class Input {
       this.board.logger('input ' + this.inputName + ' on board ' + this.board.serialPortPath + ' was deployed');
     }
     return this;
+  }
+
+  deployListener() {
+    this.deploy();
+  }
+
+  removeListener() {
+    this.remove();
   }
 }
 
