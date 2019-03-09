@@ -18,6 +18,6 @@ const core = awp.initialize(server);
 const board = core.newBoard('COM3', {baudRate: 9600}, true);
 console.log(board._isStrict);
 
-const input1 = board.addSocketInput('test').deploy();
+const input1 = board.addSocketInput('test').deploy().remove();
 
 

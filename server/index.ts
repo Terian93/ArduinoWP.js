@@ -56,7 +56,7 @@ class Board {
     strict: boolean
   ) {
     this.core = core;
-    this. _logger = (data) => core.logger(data);
+    this. _logger = (data) => this.core.logger(data);
     this._socketIO = socket;
     this._serialPortPath = path;
     this._port = new SerialPort(path, portOptions, (data) => this.logger(data));
@@ -162,21 +162,34 @@ class Input {
   private fullListener: (data: any) => void;
   private isDeployed = false;
   private connection?: SocketIO.Namespace;
+  private _logger: ( msg:Error | null | undefined | string, type?: string ) => void;
 
   constructor(inputName: string, board: Board) {
     this.board = board;
     this.inputName = inputName;
-
+    this. _logger = (data) => this.board.logger(data);
     this.listener = (data:any) => {
       const editedData = inputName + '/AWP-input/' + data;
-      this.board.serialParser.write( '' + '\n', this.board.logger);
-      this.board.logger(
+      this.board.serialParser.write( '' + '\n', this.logger);
+      this.logger(
         this.board.serialPortPath + 
         ' <-[' + inputName + ']- ' +
         editedData
       );
     };
     this.fullListener = this.listener;
+  }
+
+  get logger() {
+    return this._logger;
+  }
+
+  set logger( func: (msg:Error | null | undefined | string, type?: string) => void ) {
+    this._logger = func;
+  }
+
+  setLogger( func: (msg:Error | null | undefined | string, type?: string) => void ) {
+    this._logger = func;
   }
 
   addMiddleware(middleware: (data: any) => any) {
