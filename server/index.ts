@@ -282,6 +282,7 @@ class Output extends IO {
   private isDeployed = false;
   private connection: SerialPort.parsers.Readline;
   private serialPortListener: (data: any) => void;
+  private trigger = (data: string) => true;
 
   constructor(outputName: string, board: Board) {
     super(board);
@@ -303,6 +304,10 @@ class Output extends IO {
     this.connection = this.board.serialParser;
   }
 
+  addTrigger(trigger: (data: string) => boolean) {
+    this.trigger = trigger;
+  }
+
   remove() {
     if (this.isDeployed && this.connection !== undefined) {
       this.connection.removeListener('data', this.serialPortListener);
@@ -319,7 +324,7 @@ class Output extends IO {
       this.isDeployed = true;
       this.serialPortListener = (rawData: string) => {
         const [dataIdentifier, data] = rawData.split('/AWP-output/');
-        if ( dataIdentifier === this.outputName) {
+        if ( dataIdentifier === this.outputName && this.trigger(data)) {
           this.fullListener(data);
         }
       };
