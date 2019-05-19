@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@types/socket.io": "^2.1.2",
+    "awp-server": "^1.0.2",
     "mypluralize": "^1.0.3",
     "serialport": "^7.1.4",
     "socket.io": "^2.2.0"

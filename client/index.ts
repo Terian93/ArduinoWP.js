@@ -1,5 +1,4 @@
 import * as socketIO from 'socket.io';
-//optional
 class ArduinoWebPort {
   private socket: socketIO.Socket;
   constructor(path: string) {
@@ -10,10 +9,14 @@ class ArduinoWebPort {
   createInput(event:any){ 
     return new Input(event, this.socket)
   }
-  createOutput(){}
+  createOutput(){
+    //TODO
+  }
 }
 
+//TODO debugMode
 class Input {
+  private debugMode: boolean;
   private event: string;
   private middleware = (data:any) => data;
   private callbacks: Array<(data:any) => void>;
@@ -22,53 +25,76 @@ class Input {
   private socket: socketIO.Socket;
   private value: string;
 
-  constructor(event: string, socket: socketIO.Socket) {
+  constructor(event: string, socket: socketIO.Socket, isDebugModeActive = false) {
     this.event = event;
     this.value = '';
     this.trigger = () => true;
     this.callbacks = [];
     this.socket = socket;
+    this.debugMode = isDebugModeActive;
   }
+  //TODO
+  // toogleDebugMode(){
+  //   this.isDebugMode != this.isDebugMode;
+  //   return this;
+  // }
 
   addMiddleware(middleware: (data: any) => any) {
     this.middleware = middleware;
     return this;
   }
-  changeMiddleware() {}
+  changeMiddleware(middleware: (data: any) => any) {
+    return this.addMiddleware(middleware);
+  }
   removeMiddleware() {
     this.middleware = (data:any) => data;
+    if ( this.debugMode ) {
+      //TODO
+      //console.log(input\output + eventName + action);
+    }
   }
 
   addCallback(callback: (data: any) => void) {
     this.callbacks.push(callback);
     return this;
   }
-  changeCallBack(callback: (data: any) => void, index: number) {}
-  removeCallback(callback: (data: any) => void, index: number) {}
+  changeCallBack(callback: (data: any) => void, index: number) {
+    //TODO
+  }
+  removeCallback(callback: (data: any) => void, index: number) {
+    //TODO
+  }
 
-  addTrigger(){}
-  changeTrigger(){return this.addTrigger()}
-  removeTrigger(){this.trigger = () => true;}
+  addTrigger(){
+    //TODO
+  }
+  changeTrigger(){
+    return this.addTrigger();
+  }
+  removeTrigger(){
+    this.trigger = () => true;
+  }
 
   private createListener() {
+    this.remove();
     this.fullListener = (data) => {
       if(this.trigger(data)) {
         this.value = this.middleware(data);
         this.callbacks.forEach(fn => {
-          //if fn function =>
           fn(this.value);
-        })
+        });
       }
-    }
+    };
   }
 
   deploy() {
     this.createListener();
-    this.socket.on('test', this.fullListener);
+    this.socket.on('test', this.fullListener); //TODO fix data type
     return this;
   }
 
   remove() {
+    //TODO: add feature to stop socket.on() event listener
     return this;
   }
   //+синтаксичний цукор!!!
@@ -111,7 +137,7 @@ class DS3201 {
   constructor(parameters) {
     this.precision = 0.5;
     this.input = new Input(...);
-    this.output = new Input(...);
+    this.output = new Output(...);
   }
 
 }
