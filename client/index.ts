@@ -1,4 +1,4 @@
-import * as socketIO from 'socket.io';
+import * as socketIO from 'socket.io'; 
 class ArduinoWebPort {
   private socket: socketIO.Socket;
   constructor(path: string) {
@@ -9,8 +9,8 @@ class ArduinoWebPort {
   createInput(event:any){ 
     return new Input(event, this.socket)
   }
-  createOutput(){
-    //TODO
+  createOutput(event: any){
+    return new Output(event, this.socket)
   }
 }
 
@@ -59,17 +59,21 @@ class Input {
     return this;
   }
   changeCallBack(callback: (data: any) => void, index: number) {
-    //TODO
+    return this.addCallback(callback);
   }
   removeCallback(callback: (data: any) => void, index: number) {
-    //TODO
+    this.callback = (data:any)=>data;
+    if(this.debugMode) {
+      //.........
+    }
   }
 
-  addTrigger(){
-    //TODO
+  addTrigger(trigger: (data:any) => any ){
+    this.trigger=trigger;
+    return this;
   }
-  changeTrigger(){
-    return this.addTrigger();
+  changeTrigger(trigger: (data:any) => any ){
+    return this.addTrigger(trigger);
   }
   removeTrigger(){
     this.trigger = () => true;
@@ -94,10 +98,11 @@ class Input {
   }
 
   remove() {
-    //TODO: add feature to stop socket.on() event listener
+                                          //TODO: add feature to stop socket.on() event listener
+    this.socket.removeAllListeners('test');//CHECK+++++++++++++++++++++++++++++++++++++++++
     return this;
   }
-  //+синтаксичний цукор!!!
+  
 }
 
 // btn.addEventListener('click', function(){
@@ -119,8 +124,8 @@ class Output {
     this.callbacks.forEach(fn => {
       //if fn function =>
       fn(processedValue);
-    })
-    return true
+    });
+    return true;
   }
 
   getEmitter(){
