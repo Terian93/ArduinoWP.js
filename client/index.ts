@@ -19,7 +19,7 @@ class Input {
   private debugMode: boolean;
   private event: string;
   private middleware = (data:any) => data;
-  private callbacks: Array<(data:any) => void>;
+  private callback = (data:any) => null;
   private fullListener?: (data: any) => void;
   private trigger: (data: any) => boolean;
   private socket: socketIO.Socket;
@@ -29,7 +29,6 @@ class Input {
     this.event = event;
     this.value = '';
     this.trigger = () => true;
-    this.callbacks = [];
     this.socket = socket;
     this.debugMode = isDebugModeActive;
   }
@@ -54,14 +53,14 @@ class Input {
     }
   }
 
-  addCallback(callback: (data: any) => void) {
-    this.callbacks.push(callback);
+  addCallback(callback: (data: any) => any) {
+    this.callback=callback;
     return this;
   }
-  changeCallBack(callback: (data: any) => void, index: number) {
+  changeCallBack(callback: (data: any) => any, index: number) {
     return this.addCallback(callback);
   }
-  removeCallback(callback: (data: any) => void, index: number) {
+  removeCallback(callback: (data: any) => any, index: number) {
     this.callback = (data:any)=>data;
     if(this.debugMode) {
       //.........
@@ -84,7 +83,7 @@ class Input {
     this.fullListener = (data) => {
       if(this.trigger(data)) {
         this.value = this.middleware(data);
-        this.callbacks.forEach(fn => {
+        this.callback.forEach(fn => {
           fn(this.value);
         });
       }
@@ -98,8 +97,7 @@ class Input {
   }
 
   remove() {
-                                          //TODO: add feature to stop socket.on() event listener
-    this.socket.removeAllListeners('test');//CHECK+++++++++++++++++++++++++++++++++++++++++
+    this.socket.removeAllListeners('test');
     return this;
   }
   
@@ -112,15 +110,24 @@ class Input {
 // });
 
 class Output {
-  constructor(parameters) {
-    
-  }
-  //no trigger
+  //#region Parametrs 
+  private socket: socketIO.Socket;
+  private debugMode: boolean;
+  private event: string;
+  private middleware = (data:any) => data;
+  private callback = (data:any) => null;
+  private fullListener?: (data: any) => void;
+  private value: string;
+  //#endregion
 
+
+  constructor(socket: socketIO.Socket) {
+      this.socket= socket;
+    }
   //deploy for output
   private emit(value: any) {
     const processedValue = this.middleware(data);
-    socket.emit(this.event, processedValue);
+    this.socket.emit(this.event, processedValue);
     this.callbacks.forEach(fn => {
       //if fn function =>
       fn(processedValue);
