@@ -6,15 +6,14 @@ class ArduinoWebPort {
     this.socket = io.connect('http://localhost:3000'); //path
   }
 
-  createInput(event:any){ 
-    return new Input(event, this.socket)
+  createInput(event:any,debugMode =false){ 
+    return new Input(event, this.socket,debugMode);
   }
-  createOutput(event: any){
-    return new Output(event, this.socket)
+  createOutput(event: any,debugMode=false){
+    return new Output(event, this.socket,debugMode);
   }
 }
 
-//TODO debugMode
 class Input {
   private debugMode: boolean;
   private event: string;
@@ -25,21 +24,23 @@ class Input {
   private socket: socketIO.Socket;
   private value: string;
 
-  constructor(event: string, socket: socketIO.Socket, isDebugModeActive = false) {
+  constructor(event: string, socket: socketIO.Socket, isDebugModeActive:boolean ) {
     this.event = event;
     this.value = '';
     this.trigger = () => true;
     this.socket = socket;
     this.debugMode = isDebugModeActive;
   }
-  //TODO
-  // toogleDebugMode(){
-  //   this.isDebugMode != this.isDebugMode;
-  //   return this;
-  // }
+  toogleDebugMode(){
+    this.debugMode = !this.debugMode;
+    return this;
+  }
 
   addMiddleware(middleware: (data: any) => any) {
     this.middleware = middleware;
+    if(this.debugMode){
+    console.log("Input:"+this.event+" addMidlleware()");
+    }
     return this;
   }
   changeMiddleware(middleware: (data: any) => any) {
@@ -48,8 +49,8 @@ class Input {
   removeMiddleware() {
     this.middleware = (data:any) => data;
     if ( this.debugMode ) {
-      //TODO
-      //console.log(input\output + eventName + action);
+
+      console.log("Input:"+this.event+" removeMidlleware()");
     }
   }
 
@@ -121,7 +122,7 @@ class Output {
   //#endregion
 
 
-  constructor(socket: socketIO.Socket) {
+  constructor(event: string, socket: socketIO.Socket, isDebugModeActive :boolean) {
       this.socket= socket;
     }
   //deploy for output
