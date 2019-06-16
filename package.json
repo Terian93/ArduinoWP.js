@@ -28,6 +28,7 @@
     "awp-server": "^1.0.2",
     "mypluralize": "^1.0.3",
     "serialport": "^7.1.4",
-    "socket.io": "^2.2.0"
+    "socket.io": "^2.2.0",
+    "socket.io-client": "^2.2.0"
   }
 }

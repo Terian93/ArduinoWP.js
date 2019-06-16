@@ -1,9 +1,9 @@
-import * as socketIO from 'socket.io'; 
+import socketIO from 'socket.io-client'; 
 class ArduinoWebPort {
   private socket: socketIO.Socket;
   constructor(path: string) {
     //create socket
-    this.socket = io.connect('http://localhost:3000'); //path
+    this.socket =socketIO.connect('http://localhost:3000'); //path
   }
 
   createInput(event:any,debugMode =false){ 
@@ -81,12 +81,10 @@ class Input {
 
   private createListener() {
     this.remove();
-    this.fullListener = (data) => {
+    this.fullListener = (data:any) => {
       if(this.trigger(data)) {
         this.value = this.middleware(data);
-        this.callback.forEach(fn => {
-          fn(this.value);
-        });
+        this.callback(data);
       }
     };
   }
@@ -104,11 +102,11 @@ class Input {
   
 }
 
-// btn.addEventListener('click', function(){
+//btn.addEventListener('click', function(){
 //   socket.emit(event.value, message.value);
 //   message.value = "";
 //   event.value = "";
-// });
+//});
 
 class Output {
   //#region Parametrs 
@@ -129,7 +127,7 @@ class Output {
   private emit(value: any) {
     const processedValue = this.middleware(data);
     this.socket.emit(this.event, processedValue);
-    this.callbacks.forEach(fn => {
+    this.callback.forEach(fn => {
       //if fn function =>
       fn(processedValue);
     });
@@ -154,6 +152,16 @@ class DS3201 {
   }
 
 }
+
+
+
+
+
+
+
+
+
+
 
 //example
 const t = new DS3201();
