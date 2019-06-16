@@ -2,7 +2,7 @@ import IO from 'socket.io-client';
 //const socketIO = require('socket.io-client');
 import * as socketIO from 'socket.io-client';
 class ArduinoWebPort {
-  private socket: SocketIO.Socket;
+  private socket: SocketIOClient.Socket;
   constructor(path: string) {
     //create socket
     this.socket =IO.connect('http://localhost:3000'); //path
@@ -21,17 +21,23 @@ class Input {
   private event: string;
   private middleware = (data:any) => data;
   private callback = (data:any) => null;
-  private fullListener?: (data: any) => void;
+  private fullListener: (data: any) => void;
   private trigger: (data: any) => boolean;
-  private socket: SocketIO.Socket;
+  private socket: SocketIOClient.Socket;
   private value: string;
 
-  constructor(event: string, socket: SocketIO.Socket, isDebugModeActive:boolean ) {
+  constructor(event: string, socket: SocketIOClient.Socket, isDebugModeActive:boolean ) {
     this.event = event;
     this.value = '';
     this.trigger = () => true;
     this.socket = socket;
     this.debugMode = isDebugModeActive;
+    this.fullListener = (data:any) => {
+      if(this.trigger(data)) {
+        this.value = this.middleware(data);
+        this.callback(data);
+      }
+    };
   }
   toogleDebugMode(){
     this.debugMode = !this.debugMode;
@@ -98,7 +104,7 @@ class Input {
   }
 
   remove() {
-    this.socket.removeAllListeners('test');
+    this.socket.off('test',this.fullListener);
     return this;
   }
   
@@ -112,7 +118,7 @@ class Input {
 
 class Output {
   //#region Parametrs 
-  private socket: SocketIO.Socket;
+  private socket: SocketIOClient.Socket;
   private debugMode: boolean;
   private event: string;
   private middleware = (data:any) => data;
@@ -122,9 +128,13 @@ class Output {
   //#endregion
 
 
-  constructor(event: string, socket: SocketIO.Socket, isDebugModeActive :boolean) {
+  constructor(event: string, socket: SocketIOClient.Socket, isDebugModeActive :boolean) {
       this.socket= socket;
+      this.debugMode=isDebugModeActive;
+      this.event=event;
+      this.value="";
     }
+
   //deploy for output
   private emit(value: any) {
     const processedValue = this.middleware(value);
@@ -151,16 +161,6 @@ class DS3201 {
   }
 
 }
-
-
-
-
-
-
-
-
-
-
 
 //example
 const t = new DS3201();
