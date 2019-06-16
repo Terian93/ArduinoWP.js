@@ -226,7 +226,7 @@ class Output {
   }
 
   //deploy for output
-  private emit(data: any) {
+  emit(data: any) {
     this.value = this.middleware(data);
     this.socket.emit(this.event, this.value);
     this.callback(this.value);
@@ -235,34 +235,48 @@ class Output {
     }
     return true;
   }
-
-  getEmitter(){
-    return this.emit;
-  }
 }
 
 class Sensor {
   protected core: ArduinoWebPort;
   protected event: string;
-  protected socket: SocketIOClient.Socket;
   protected _input: Input;
 
   constructor(
     core: ArduinoWebPort,
     event: string,
-    socket: SocketIOClient.Socket,
     isDebugModeActive = false
   ) {
     this.core = core;
     this.event = event;
-    this.socket = socket;
     this._input = core.createInput(event, isDebugModeActive);
   }
 
-  get original() {
+  get input() {
     return this._input;
   }
+}
+
+class Actuator {
+  protected core: ArduinoWebPort;
+  protected event: string;
+  protected _output: Output; 
+
+  constructor(
+    core: ArduinoWebPort,
+    event: string,
+    isDebugModeActive = false
+  ) {
+    this.core = core;
+    this.event = event;
+    this._output = core.createOutput(event, isDebugModeActive);
+  }
+
+  get output() {
+    return this._output;
+  }
 } 
+
 
 class TemperatureSensor extends Sensor {
   private precision?: number;
@@ -273,8 +287,8 @@ class TemperatureSensor extends Sensor {
   private minTriggerLimit?: number;
   private unitParser?: (temperature: number) => number;
 
-  constructor(core: ArduinoWebPort, event: string, socket: SocketIOClient.Socket, isDebugModeActive = false ) {
-    super(core, event, socket);
+  constructor(core: ArduinoWebPort, event: string, isDebugModeActive = false ) {
+    super(core, event);
   }
 
   setPercision(precision: number) {
@@ -390,6 +404,114 @@ class TemperatureSensor extends Sensor {
     }
     this._input.deploy();
     return this;
+  }
+}
+
+class Servo extends Actuator {
+  private currentPosition: number;
+  private twoPositionModeActive = false;
+  private isOpened?: boolean;
+  private closedPosition?: number;
+  private openedPosition?: number;
+  private continiousMode = false;
+  private lastRotation?: {
+    direction: 'left' | 'right' | 'stop',
+    speed: number,
+    time: number,
+    delay: number
+  };
+
+  constructor(core: ArduinoWebPort, event: string, isDebugModeActive = false ) {
+    super(core, event);
+    this.currentPosition = 0;
+  }
+
+  get value() {
+    if (this.twoPositionModeActive) {
+      return this.isOpened;
+    } else if (this.continiousMode) {
+      return this.lastRotation;
+    } else {
+      return this.currentPosition;
+    }
+  }
+
+  setCurrentPosition(deg: number) {
+    if (deg < 0 || deg > 360) {
+      console.warn('wrong degree number');
+    } else {
+      this.currentPosition = deg;
+    }
+  }
+
+  setPosition(deg: number) {
+    if (deg < 0 || deg > 360) {
+      console.warn('wrong degree number');
+    } else {
+      this._output.emit(deg);
+    }
+  }
+
+  disableTwoPositionMode() {
+    this.twoPositionModeActive = false;
+  }
+
+  enableTwoPositionMode(closedDeg: number, openedDeg: number) {
+    this.disableContiniousMode();
+    if (closedDeg < 0 || closedDeg > 360 || openedDeg < 0 || openedDeg > 360) {
+      console.warn('wrong degree number');
+    } else {
+      this.twoPositionModeActive = true;
+      this.closedPosition = closedDeg;
+      this.openedPosition = openedDeg;
+      this.close();
+    }
+  }
+
+  close() {
+    if (this.twoPositionModeActive && this.closedPosition) {
+      this.setPosition(this.closedPosition);
+      this.isOpened = false;
+    } else {
+      console.warn('two position mode for Servo is unactive');
+    }
+  }
+
+  open() {
+    if (this.twoPositionModeActive && this.openedPosition) {
+      this.setPosition(this.openedPosition);
+      this.isOpened = true;
+    } else {
+      console.warn('two position mode for Servo is unactive');
+    }
+  }
+
+  enableContiniousMode() {
+    this.continiousMode = true;
+    this.disableTwoPositionMode();
+  }
+
+  disableContiniousMode() {
+    this.continiousMode = false;
+  }
+
+  setRotation(
+    direction: 'left' | 'right' | 'stop',
+    speed: number, //0 = stop, 90 = max speed
+    time = 0,      //time in ms; 0 means infinite
+    delay = 0      //delay in ms; 0 means instant start
+  ) {
+    if (!this.continiousMode) {
+      console.warn('continiousMode for Servo is Disabled');
+    } else {
+      this.lastRotation = { direction, speed, time, delay };
+      if (direction === 'stop') {
+        this._output.emit('90');
+      } else {
+        const parsedSpeed = direction === 'left' ? 90 - speed : 90 + speed;
+        this._output.emit(parsedSpeed + '::' + time + '::' + delay);
+      }
+    }
   }
 }
 
