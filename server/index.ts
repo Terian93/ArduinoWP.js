@@ -233,11 +233,22 @@ class Input extends IO {
     this.listener = (data:any) => {
       const editedData = inputName + '/AWP-input/' + data;
       this.board.serialParser.write( editedData + '\n', this.logger);
-      this.logger(
-        this.board.serialPortPath + 
-        ' <-[' + inputName + ']- ' +
-        data
-      );
+      if (this.board.isPortOpened) {
+        this.logger(
+          this.board.serialPortPath + 
+          ' <-[' + inputName + ']- ' +
+          data
+        );
+        return true;
+      } else {
+        this.logger(
+          this.board.serialPortPath + 
+          ' <X-[' + inputName + ']- ' +
+          data + ' (can\'t connect to Arduino board)'
+        );
+        return false;
+      }
+
     };
     this.fullListener = this.listener;
     this.socketListener = (socket: socketIO.Socket) => {
@@ -326,6 +337,10 @@ class Output extends IO {
         const [dataIdentifier, data] = rawData.split('/AWP-output/');
         if ( dataIdentifier === this.outputName && this.trigger(data)) {
           this.fullListener(data);
+        } else if (dataIdentifier === this.outputName && !this.trigger(data)) {
+          this.logger(
+            this.board.serialPortPath + ' -[' + this.outputName + ']-X> ' + data + ' (trigger stoped listener function)'
+          );
         }
       };
       this.connection = this.board.serialParser.on('data', this.serialPortListener);
