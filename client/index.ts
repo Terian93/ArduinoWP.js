@@ -1,9 +1,11 @@
-import socketIO from 'socket.io-client'; 
+import IO from 'socket.io-client';
+//const socketIO = require('socket.io-client');
+import * as socketIO from 'socket.io-client';
 class ArduinoWebPort {
-  private socket: socketIO.Socket;
+  private socket: SocketIO.Socket;
   constructor(path: string) {
     //create socket
-    this.socket =socketIO.connect('http://localhost:3000'); //path
+    this.socket =IO.connect('http://localhost:3000'); //path
   }
 
   createInput(event:any,debugMode =false){ 
@@ -21,10 +23,10 @@ class Input {
   private callback = (data:any) => null;
   private fullListener?: (data: any) => void;
   private trigger: (data: any) => boolean;
-  private socket: socketIO.Socket;
+  private socket: SocketIO.Socket;
   private value: string;
 
-  constructor(event: string, socket: socketIO.Socket, isDebugModeActive:boolean ) {
+  constructor(event: string, socket: SocketIO.Socket, isDebugModeActive:boolean ) {
     this.event = event;
     this.value = '';
     this.trigger = () => true;
@@ -110,7 +112,7 @@ class Input {
 
 class Output {
   //#region Parametrs 
-  private socket: socketIO.Socket;
+  private socket: SocketIO.Socket;
   private debugMode: boolean;
   private event: string;
   private middleware = (data:any) => data;
@@ -120,17 +122,14 @@ class Output {
   //#endregion
 
 
-  constructor(event: string, socket: socketIO.Socket, isDebugModeActive :boolean) {
+  constructor(event: string, socket: SocketIO.Socket, isDebugModeActive :boolean) {
       this.socket= socket;
     }
   //deploy for output
   private emit(value: any) {
-    const processedValue = this.middleware(data);
+    const processedValue = this.middleware(value);
     this.socket.emit(this.event, processedValue);
-    this.callback.forEach(fn => {
-      //if fn function =>
-      fn(processedValue);
-    });
+    this.callback(value);
     return true;
   }
 
