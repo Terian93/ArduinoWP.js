@@ -32,7 +32,7 @@ class Input {
   private value: string;
   private isDeployed: boolean;
 
-  constructor(event: string, socket: SocketIOClient.Socket, isDebugModeActive:boolean ) {
+  constructor(event: string, socket: SocketIOClient.Socket, isDebugModeActive = false) {
     this.event = event;
     this.value = '';
     this.trigger = () => true;
@@ -181,7 +181,7 @@ class Output {
   //#endregion
 
 
-  constructor(event: string, socket: SocketIOClient.Socket, isDebugModeActive :boolean) {
+  constructor(event: string, socket: SocketIOClient.Socket, isDebugModeActive = false) {
     this.socket = socket;
     this.debugMode = isDebugModeActive;
     this.event = event;
@@ -238,6 +238,158 @@ class Output {
 
   getEmitter(){
     return this.emit;
+  }
+}
+
+class Sensor {
+  protected core: ArduinoWebPort;
+  protected event: string;
+  protected socket: SocketIOClient.Socket;
+  protected _input: Input;
+
+  constructor(
+    core: ArduinoWebPort,
+    event: string,
+    socket: SocketIOClient.Socket,
+    isDebugModeActive = false
+  ) {
+    this.core = core;
+    this.event = event;
+    this.socket = socket;
+    this._input = core.createInput(event, isDebugModeActive);
+  }
+
+  get original() {
+    return this._input;
+  }
+} 
+
+class TemperatureSensor extends Sensor {
+  private precision?: number;
+  private maxLimit?: number;
+  private minLimit?: number;
+  private triggerAreaReturns?: boolean;
+  private maxTriggerLimit?: number;
+  private minTriggerLimit?: number;
+  private unitParser?: (temperature: number) => number;
+
+  constructor(core: ArduinoWebPort, event: string, socket: SocketIOClient.Socket, isDebugModeActive = false ) {
+    super(core, event, socket);
+  }
+
+  setPercision(precision: number) {
+    this.precision = precision;
+    return this;
+  }
+
+  setTemperatureNumberLimit(min?: number, max?: number) {
+    if (min) {
+      this.minLimit = min;
+    }
+    if (max) {
+      this.maxLimit = max;
+    }
+    return this;
+  }
+
+  setTriggerLimit(areaReturn = true, min?: number, max?: number) {
+    if (min) {
+      this.minTriggerLimit = min;
+    }
+    if (max) {
+      this.maxTriggerLimit = max;
+    }
+    this.triggerAreaReturns = areaReturn;
+    return this;
+  }
+
+  private changeFtoC (fahrenheitTemp: number) {
+    // if (!Number.isSafeInteger(fahrenheitTemp) || !Number.isSafeInteger(celsiusTemp)) {
+    //   console.warn('changeFtoC(): unsafe number');
+    // }
+    return (fahrenheitTemp - 32) / 1.8;
+  }
+
+  private changeCtoF (celsiusTemp: number) {
+    return celsiusTemp * 1.8 + 32;
+  }
+
+  private changeCtoK (celsiusTemp: number) {
+    return celsiusTemp + 273.15;
+  }
+
+  private changeKtoC (kelvinTemp: number) {
+    return kelvinTemp - 273.15;
+  }
+
+  changeUnits(inputUnits: 'Celsius' | 'Fahrenheit' | 'Kelvin', outputUnits: 'Celsius' | 'Fahrenheit' | 'Kelvin') {
+    if (inputUnits === 'Celsius' && outputUnits === 'Fahrenheit') {
+      this.unitParser = (temp: number) => this.changeCtoF(temp);
+    }
+
+    if (inputUnits === 'Celsius' && outputUnits === 'Kelvin') {
+      this.unitParser = (temp: number) => this.changeCtoK(temp);
+    }
+
+    if (inputUnits === 'Fahrenheit' && outputUnits === 'Celsius') {
+      this.unitParser = (temp: number) => this.changeFtoC(temp);
+    }
+
+    if (inputUnits === 'Fahrenheit' && outputUnits === 'Kelvin') {
+      this.unitParser = (temp: number) => this.changeCtoK(this.changeFtoC(temp));
+    }
+
+    if (inputUnits === 'Kelvin' && outputUnits === 'Celsius') {
+      this.unitParser = (temp: number) => this.changeKtoC(temp);
+    }
+
+    if (inputUnits === 'Kelvin' && outputUnits === 'Fahrenheit') {
+      this.unitParser = (temp: number) => this.changeCtoF(this.changeKtoC(temp));
+    }
+    return this;
+  }
+
+  deploy (middleware = (data: number) => data, callback?: (data:any) => void) {
+    this._input.addMiddleware((temp) => {
+      let parsedValue = parseFloat(temp);
+      if (this.unitParser) {
+        parsedValue = this.unitParser(parsedValue);
+      }
+      if(this.precision) {
+        parsedValue = Math.ceil(parsedValue / this.precision) * this.precision;
+      }
+      if (this.maxLimit) {
+        parsedValue = parsedValue > this.maxLimit ? this.maxLimit : parsedValue;
+      }
+      if (this.minLimit) {
+        parsedValue = parsedValue < this.minLimit ? this.minLimit : parsedValue;
+      }
+
+      if (!Number.isSafeInteger(parsedValue)) {
+        console.warn('unsafe number parsed in middleware');
+      }
+
+      return middleware(parsedValue);
+    });
+
+    if (callback) {
+      if (this.minTriggerLimit || this.maxTriggerLimit) {
+        this._input.addCallback((temp) => {
+          let passedLimit = this.triggerAreaReturns;
+          if ( this.minTriggerLimit && temp < this.minTriggerLimit ) {
+            passedLimit = !this.triggerAreaReturns;
+          }
+          if ( this.maxTriggerLimit && temp > this.maxTriggerLimit ) {
+            passedLimit = !this.triggerAreaReturns;
+          }
+          callback({passedLimit, temp});
+        });
+      } else {
+        this._input.addCallback(callback);
+      }
+    }
+    this._input.deploy();
+    return this;
   }
 }
 
