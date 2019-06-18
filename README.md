@@ -5,10 +5,9 @@ Create library that can:
 * server side
   * create listener of serialport using [node serialport](https://serialport.io/en/)
   * stream data from arduino board by serial port to client using [socket.io](https://socket.io) 
-  * log data to data base with HOC's
   * listen to response from client on stream and send data to arduino board based on sent data
 * client side
-  * trigger function when input data are valid to limits (with HOC's too)
+  * trigger function when input data are valid to limits
   * parse data in prefered units
   * special methods for sensors
 ## Reasons

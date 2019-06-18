@@ -72,10 +72,6 @@ class Board {
     this._logger('AWP: destructor called in Board ' + this.serialPortPath);
   }
 
-  test(inputName: string) {
-    return this.io[inputName].input;
-  }
-
   isPortOpened() {
     return this.serialPort.isOpen;
   }
@@ -165,10 +161,6 @@ class IO {
     this. _logger = (msg:Error | null | undefined | string, type?: string ) => this.board.logger(msg, type);
     this.listener = (data:any) => {};
     this.fullListener = this.listener;
-  }
-
-  test(data: any) {
-    this.logger(data);
   }
 
   get logger() {
