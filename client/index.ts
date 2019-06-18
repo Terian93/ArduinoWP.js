@@ -1,11 +1,10 @@
 import IO from 'socket.io-client';
 
-class ArduinoWebPort {
+export class ArduinoWebPort {
   private _socket: SocketIOClient.Socket;
   private conectionCallback?: (isDeployed: boolean) => void;
-
-  constructor(path: string) {
-    this._socket =IO.connect(path); //path
+  constructor(uri: string) {
+    this._socket =IO.connect(uri); //path
   }
 
   get socket() {
@@ -278,7 +277,7 @@ class Actuator {
 } 
 
 
-class TemperatureSensor extends Sensor {
+export class TemperatureSensor extends Sensor {
   private precision?: number;
   private maxLimit?: number;
   private minLimit?: number;
@@ -407,7 +406,7 @@ class TemperatureSensor extends Sensor {
   }
 }
 
-class Servo extends Actuator {
+export class Servo extends Actuator {
   private currentPosition: number;
   private twoPositionModeActive = false;
   private isOpened?: boolean;
