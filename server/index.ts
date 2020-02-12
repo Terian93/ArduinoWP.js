@@ -5,9 +5,9 @@ import { Server } from 'https';
 class ArduinoWebPort {
   private socket: SocketIO.Server;
   private boards: { [name: string]: Board };
-  private _logger = ( msg:Error | null | undefined | string, type = 'AWP' ) => msg != null ? console.log(''+msg) : null;
+  private _logger = (msg: Error | null | undefined | string, type = 'AWP') => msg != null ? console.log('' + msg) : null;
 
-  constructor (server: Server, strict = true)  {
+  constructor(server: Server, strict = true) {
     this.socket = socketIO(server);
     this.boards = {};
   }
@@ -16,19 +16,19 @@ class ArduinoWebPort {
     this.logger('anyText');
   }
 
-  get logger () {
+  get logger() {
     return this._logger;
   }
 
-  set logger ( func: (msg:Error | null | undefined | string, type?: string) => void ) {
+  set logger(func: (msg: Error | null | undefined | string, type?: string) => void) {
     this._logger = func;
   }
 
-  setLogger( func: (msg:Error | null | undefined | string, type?: string) => void ) {
+  setLogger(func: (msg: Error | null | undefined | string, type?: string) => void) {
     this._logger = func;
   }
 
-  newBoard(path:string, portOptions: SerialPort.OpenOptions, isStrict: boolean) {
+  newBoard(path: string, portOptions: SerialPort.OpenOptions, isStrict: boolean) {
     if (!this.boards.hasOwnProperty(path)) {
       this.boards[path] = new Board(this.socket, path, portOptions, this, isStrict);
     } else {
@@ -44,24 +44,24 @@ class Board {
   private _port: SerialPort;
   private _parser: SerialPort.parsers.Readline;
   private core: ArduinoWebPort;
-  private io: {[name: string]:{input?: Input, output?: Output}}; //change i/o type to clasess
-  private _logger: ( msg:Error | null | undefined | string, type?: string ) => void;
+  private io: { [name: string]: { input?: Input, output?: Output } }; //change i/o type to clasess
+  private _logger: (msg: Error | null | undefined | string, type?: string) => void;
   private _isStrict: boolean;
 
-  constructor (
-    socket: SocketIO.Server, 
-    path:string, 
+  constructor(
+    socket: SocketIO.Server,
+    path: string,
     portOptions: SerialPort.OpenOptions,
     core: ArduinoWebPort,
     strict: boolean
   ) {
     this.core = core;
-    this. _logger = (msg:Error | null | undefined | string, type?: string ) => this.core.logger(msg, type);
+    this._logger = (msg: Error | null | undefined | string, type?: string) => this.core.logger(msg, type);
     this._socketIO = socket;
     this._serialPortPath = path;
     this._port = new SerialPort(path, portOptions, (data) => this.logger(data));
     this._parser = this.serialPort.pipe(new SerialPort.parsers.Readline({ delimiter: '\n' }));
-    this.serialPort.on('open', () => this.logger('AWP: serial port '+ path +' opened'));
+    this.serialPort.on('open', () => this.logger('AWP: serial port ' + path + ' opened'));
     this._isStrict = strict;
     this.io = {};
   }
@@ -107,15 +107,15 @@ class Board {
   }
   //#endregion
 
-  set logger( func: (msg:Error | null | undefined | string, type?: string) => void ) {
+  set logger(func: (msg: Error | null | undefined | string, type?: string) => void) {
     this._logger = func;
   }
 
-  setLogger( func: (msg:Error | null | undefined | string, type?: string) => void ) {
+  setLogger(func: (msg: Error | null | undefined | string, type?: string) => void) {
     this._logger = func;
   }
 
-  addSocketOutput(outputName: string, middleware = (data:any) => data) {
+  addSocketOutput(outputName: string, middleware = (data: any) => data) {
     if (this.isStrict) {
       if (this.io.hasOwnProperty(outputName) && this.io[outputName].hasOwnProperty('output')) {
         this.logger('warning: output already exists (returning existing Output)');
@@ -154,12 +154,12 @@ class IO {
   protected listener: (data: any) => void;
   protected callback?: (data: any) => void;
   protected fullListener: (data: any) => void;
-  protected _logger: ( msg:Error | null | undefined | string, type?: string ) => void;
+  protected _logger: (msg: Error | null | undefined | string, type?: string) => void;
 
   constructor(board: Board) {
     this.board = board;
-    this. _logger = (msg:Error | null | undefined | string, type?: string ) => this.board.logger(msg, type);
-    this.listener = (data:any) => {};
+    this._logger = (msg: Error | null | undefined | string, type?: string) => this.board.logger(msg, type);
+    this.listener = (data: any) => { };
     this.fullListener = this.listener;
   }
 
@@ -167,11 +167,11 @@ class IO {
     return this._logger;
   }
 
-  set logger( func: (msg:Error | null | undefined | string, type?: string) => void ) {
+  set logger(func: (msg: Error | null | undefined | string, type?: string) => void) {
     this._logger = func;
   }
 
-  setLogger( func: (msg:Error | null | undefined | string, type?: string) => void ) {
+  setLogger(func: (msg: Error | null | undefined | string, type?: string) => void) {
     this._logger = func;
     return this;
   }
@@ -222,19 +222,19 @@ class Input extends IO {
   constructor(inputName: string, board: Board) {
     super(board);
     this.inputName = inputName;
-    this.listener = (data:any) => {
+    this.listener = (data: any) => {
       const editedData = inputName + '/AWP-input/' + data;
-      this.board.serialParser.write( editedData + '\n', this.logger);
+      this.board.serialParser.write(editedData + '\n', this.logger);
       if (this.board.isPortOpened) {
         this.logger(
-          this.board.serialPortPath + 
+          this.board.serialPortPath +
           ' <-[' + inputName + ']- ' +
           data
         );
         return true;
       } else {
         this.logger(
-          this.board.serialPortPath + 
+          this.board.serialPortPath +
           ' <X-[' + inputName + ']- ' +
           data + ' (can\'t connect to Arduino board)'
         );
@@ -290,8 +290,8 @@ class Output extends IO {
   constructor(outputName: string, board: Board) {
     super(board);
     this.outputName = outputName;
-    this. _logger = (msg:Error | null | undefined | string, type?: string ) => this.board.logger(msg, type);
-    this.listener = (data:any) => {
+    this._logger = (msg: Error | null | undefined | string, type?: string) => this.board.logger(msg, type);
+    this.listener = (data: any) => {
       this.board.socketIO.emit(outputName, data);
       this.logger(
         this.board.serialPortPath + ' -[' + outputName + ']-> ' + data
@@ -300,7 +300,7 @@ class Output extends IO {
     this.fullListener = this.listener;
     this.serialPortListener = (rawData: string) => {
       const [dataIdentifier, data] = rawData.split('/AWP-output/');
-      if ( dataIdentifier === this.outputName) {
+      if (dataIdentifier === this.outputName) {
         this.fullListener(data);
       }
     };
@@ -327,7 +327,7 @@ class Output extends IO {
       this.isDeployed = true;
       this.serialPortListener = (rawData: string) => {
         const [dataIdentifier, data] = rawData.split('/AWP-output/');
-        if ( dataIdentifier === this.outputName && this.trigger(data)) {
+        if (dataIdentifier === this.outputName && this.trigger(data)) {
           this.fullListener(data);
         } else if (dataIdentifier === this.outputName && !this.trigger(data)) {
           this.logger(
