@@ -5,7 +5,7 @@ import { Server } from 'https';
 class ArduinoWebPort {
   private socket: SocketIO.Server;
   private boards: { [name: string]: Board };
-  private _logger = ( msg:Error | null | undefined | string, type = 'AWP' ) => msg != null ? console.log('logger:' + msg) : null;
+  private _logger = ( msg:Error | null | undefined | string, type = 'AWP' ) => msg != null ? console.log(''+msg) : null;
 
   constructor (server: Server, strict = true)  {
     this.socket = socketIO(server);

@@ -1,6 +1,9 @@
 const express = require('express');
-const SerialPort = require('serialport');
-const awp = require('awp-server');
+//Real prod libary
+//const awp = require('awp-server');
+
+//Dev build
+const awp = require('./build/server');
 
 process.on('uncaughtException', err => {
   if (err.type == null) {
