@@ -1,3 +1,4 @@
+#Hi, that project is currently abandoned.
 # ArduinoWP.js (WIP):construction:
 Arduino Web Port - fast &amp; simple arduino-server-client connection library
 ## Idea
